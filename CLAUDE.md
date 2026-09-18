@@ -1,0 +1,24 @@
+# Cijene
+
+Javni repo: pretraga dnevnih cjenika četiri trgovine u Velikoj Gorici (Žabac, Spar Matice
+hrvatske 22, Interspar Rakarska 13, Konzum hipermarket Marina Getaldića 1). Korisnici su Vatra i
+Monika, uglavnom na mobitelu. Opis i pokretanje: `README.md`.
+
+## Arhitektura
+- `scripts/fetch.py` - preuzimanje i normalizacija, samo standardna biblioteka. Izlaz `site/data.json` (ne commita se).
+- `site/` - statična aplikacija (vanilla JS), bez build koraka.
+- `.github/workflows/update.yml` - dnevno preuzimanje + deploy na GitHub Pages (artifact, podaci nisu u gitu).
+
+## Poznate zamke izvora (provjereno 18.9.2026.)
+- **Konzum:** u linku za preuzimanje razmaci moraju biti `%20` - s `+` server vraća 404.
+  Isti link nasumično vraća 404 i kad datoteka postoji (otprilike pola pokušaja), zato `retry_404`.
+  Zaglavlje ima tipfeler "posljednih" umjesto "posljednjih".
+- **Spar:** stranica s cjenicima vraća 403 skriptama, ali JSON indeks
+  `datoteke_cjenici/Cjenik{YYYYMMDD}.json` radi. CSV je u cp1250 i odvojen s `;`, a MPC je prazan kad je proizvod na akciji.
+- **Žabac:** HTML stranica `?store=Velika%20Gorica`, datoteke imaju nasumična imena, a datum je u naslovu.
+  Nema cijene za jedinicu mjere ni akcijske cijene.
+- Kategorije se razlikuju po lancu: Spar i Konzum imaju 6-8 grubih, Žabac tridesetak finih.
+
+## Pravila
+- Ne dodavati ovisnosti ni build korak bez jasnog razloga - jednostavnost je namjerna.
+- Nakon izmjene `fetch.py` lokalno pokrenuti `python scripts/fetch.py site` i provjeriti da sve četiri trgovine prolaze.

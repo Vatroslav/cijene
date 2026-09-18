@@ -1,0 +1,55 @@
+name: Osvježi cjenike
+
+# Cjenici se objavljuju do 8:00 (Spar oko 3:30, Konzum oko 5:20, Žabac oko 7:00).
+# Cron je u UTC: 06:30 UTC = 8:30 ljeti / 7:30 zimi; drugi prolaz hvata zakašnjele.
+on:
+  schedule:
+    - cron: "30 6 * * *"
+    - cron: "30 11 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write   # samo za mjesečni keepalive commit
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Preuzmi cjenike
+        run: python scripts/fetch.py site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      # GitHub gasi zakazane workflowe u javnom repou nakon 60 dana bez commita.
+      # Podaci se ne commitaju, pa jednom mjesečno ide prazan commit.
+      - name: Keepalive
+        if: github.event_name == 'schedule' && github.event.schedule == '30 6 * * *'
+        run: |
+          if [ "$(date -u +%d)" = "01" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "Keepalive: zakazano osvježavanje ostaje aktivno"
+            git push
+          fi
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cijene - Velika Gorica</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Cijene <span>Velika Gorica</span></h1>
+    <input id="q" type="search" placeholder="Proizvod, marka ili barkod" autocomplete="off" autofocus>
+    <div id="stores" class="chips"></div>
+    <div class="filters">
+      <select id="category"><option value="">Sve kategorije</option></select>
+      <select id="sort">
+        <option value="price">Najjeftinije</option>
+        <option value="unit">Cijena po jedinici</option>
+        <option value="name">Naziv</option>
+      </select>
+      <label><input id="sale" type="checkbox"> Samo akcije</label>
+    </div>
+  </header>
+  <main>
+    <p id="status">Učitavam cjenike...</p>
+    <ul id="results"></ul>
+    <button id="more" hidden>Prikaži još</button>
+  </main>
+  <footer id="sources"></footer>
+  <script src="app.js"></script>
+</body>
+</html>
