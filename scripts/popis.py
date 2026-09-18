@@ -4,6 +4,7 @@
     python scripts/popis.py "Žabac"         drugi popis
     python scripts/popis.py --detalji       uz svaku stavku i proizvode koji su je pogodili
     python scripts/popis.py --lokalno       cjenici iz site/data.json umjesto s objavljene stranice
+    python scripts/popis.py --stavka "grčki jogurt" [--stavka ...]   bez OurGroceriesa, zadane stavke
 
 Popis se čita kroz skriptu u fitness-coach repou (ondje je prijava, lokalno) - jednom po
 pokretanju, na zahtjev, nikad u petlji. Ništa se ne zapisuje ni ne objavljuje, a popis ne
@@ -76,7 +77,7 @@ def term_score(t, w):
         return 2
     if len(w) >= 3 and t.startswith(w):
         return 1.5
-    if len(t) >= 4 and len(w) >= 4 and common_prefix(t, w) >= max(3, min(len(t), len(w)) - 1):
+    if len(t) >= 4 and len(w) >= 4 and abs(len(t) - len(w)) <= 1 and common_prefix(t, w) >= max(3, min(len(t), len(w)) - 1):
         return 1.2
     if len(t) >= 3 and t in w:
         return 1
@@ -190,11 +191,13 @@ def main():
     sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="Koja trgovina ima stavke s OurGroceries popisa.")
     parser.add_argument("popis", nargs="?", default=DEFAULT_LIST)
-    parser.add_argument("--detalji", action="store_true", help="ispiši proizvode koji su pogodili stavku")
+    parser.add_argument("--detalji", action="store_true", help="ispiši proizvode koji su pogodili stavku (do 3)")
+    parser.add_argument("--sve", action="store_true", help="uz --detalji ispiši sve proizvode, ne samo 3")
     parser.add_argument("--lokalno", action="store_true", help="cjenici iz site/data.json")
+    parser.add_argument("--stavka", action="append", help="stavka umjesto OurGroceries popisa (može više puta)")
     args = parser.parse_args()
 
-    list_name, items = read_list(args.popis)
+    list_name, items = ("Stavke", args.stavka) if args.stavka else read_list(args.popis)
     if not items:
         print(f"{list_name}: nema aktivnih stavki.")
         return
@@ -226,7 +229,7 @@ def main():
         if args.detalji:
             for i in idx:
                 if r[i]:
-                    names = "; ".join(r[i][2][:3])
+                    names = "; ".join(r[i][2] if args.sve else r[i][2][:3])
                     print(f"    {stores[i]['name']}: {'✓' if r[i][0] == 'full' else '~'} {names}")
 
     missing = [t for t, r in rows if not any(r.values())]

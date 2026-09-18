@@ -81,7 +81,8 @@ function termScore(t, w) {
   if (w === t) return 3;
   if (w.startsWith(t)) return 2;
   if (w.length >= 3 && t.startsWith(w)) return 1.5;
-  if (t.length >= 4 && w.length >= 4 && commonPrefix(t, w) >= Math.max(3, Math.min(t.length, w.length) - 1)) return 1.2;
+  if (t.length >= 4 && w.length >= 4 && Math.abs(t.length - w.length) <= 1 &&
+      commonPrefix(t, w) >= Math.max(3, Math.min(t.length, w.length) - 1)) return 1.2;
   if (t.length >= 3 && w.includes(t)) return 1;
   if (t.length >= 5 && oneEdit(t, w)) return 1;
   return 0;
