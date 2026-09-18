@@ -9,7 +9,7 @@ ima određeni proizvod. Razlike u cijeni su minorne - cijena je sekundarna infor
 isticati "najjeftinije". Pretraga je neizrazita, relevantno prvo.
 
 ## "Koja trgovina ima sve s popisa?"
-Cijeli postupak je skill `popis` u personal-os (`.claude/skills/popis/SKILL.md`) - ovo je sažetak.
+Cijeli postupak je globalni skill `popis` (`~/.claude/skills/popis/SKILL.md`) - ovo je sažetak.
 Pokrenuti `python scripts/popis.py --detalji` (default popis "Špeža"; drugi popis kao argument;
 određeni proizvod bez OurGroceriesa: `--stavka "grčki jogurt" --detalji --sve`).
 Popis čita kroz `~/github/fitness-coach/scripts/ourgroceries.py` - samo na zahtjev, nikad u petlji.
