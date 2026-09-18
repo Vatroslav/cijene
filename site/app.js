@@ -13,6 +13,7 @@ const load_ = (k, d) => JSON.parse(localStorage.getItem(k) || "null") ?? d;
 let stores = [], products = [], byBarcode = new Map(), shown = PAGE;
 const active = new Set(load_("stores", []));
 let list = load_("popis", []);   // [{q}] ili [{barcode, name}]
+let groupBy = load_("prikaz", "product");   // "product" | "store"
 
 async function load() {
   const data = await (await fetch("data.json", { cache: "no-cache" })).json();
@@ -165,7 +166,7 @@ function renderSearch() {
     act.forEach((i) => { if (p.offers.has(i)) perStore.set(i, perStore.get(i) + 1); });
     hits.push({ p, sc, n: offers.length, min: Math.min(...offers.map((o) => o.now)), unit: Math.min(...offers.map((o) => o.unitPrice ?? Infinity)) });
   }
-  if (sort === "rel" || sort === "store") hits.sort((a, b) => b.sc - a.sc || b.n - a.n || a.p.name.length - b.p.name.length);
+  if (sort === "rel") hits.sort((a, b) => b.sc - a.sc || b.n - a.n || a.p.name.length - b.p.name.length);
   if (sort === "price") hits.sort((a, b) => a.min - b.min);
   if (sort === "unit") hits.sort((a, b) => a.unit - b.unit);
   if (sort === "name") hits.sort((a, b) => a.p.name.localeCompare(b.p.name, "hr"));
@@ -173,8 +174,8 @@ function renderSearch() {
   $("status").innerHTML = hits.length
     ? `${hits.length.toLocaleString("hr-HR")} proizvoda: ` + act.map((i) => `${esc(stores[i].name)} <b>${perStore.get(i)}</b>`).join(" · ")
     : "Ništa nije pronađeno.";
-  if (sort === "store") {
-    // po trgovini: sekcija za svaku trgovinu, najrelevantnije prvo; "Prikaži još" vrijedi za svaku sekciju
+  if (groupBy === "store") {
+    // po trgovini: sekcija za svaku trgovinu, unutar nje odabrani poredak; "Prikaži još" vrijedi za svaku sekciju
     let more = false;
     for (const i of act) {
       const rows = hits.filter((h) => h.p.offers.get(i)?.now != null);
@@ -325,5 +326,14 @@ let timer;
 $("q").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => { shown = PAGE; renderSearch(); }, 150); });
 ["category", "sort", "sale"].forEach((id) => $(id).addEventListener("change", () => { shown = PAGE; renderSearch(); }));
 $("more").onclick = () => { shown += PAGE; renderSearch(); };
+
+function renderGroup() {
+  document.querySelectorAll("#groupBy button").forEach((b) => b.classList.toggle("on", b.dataset.group === groupBy));
+}
+document.querySelectorAll("#groupBy button").forEach((b) => b.onclick = () => {
+  groupBy = b.dataset.group; store_("prikaz", groupBy);
+  renderGroup(); shown = PAGE; renderSearch();
+});
+renderGroup();
 
 load().catch((e) => { $("status").textContent = "Cjenici se nisu učitali: " + e.message; });
