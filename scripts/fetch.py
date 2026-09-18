@@ -20,6 +20,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 from pathlib import Path
 
 UA = "Mozilla/5.0 (compatible; cijene/1.0; +https://github.com/Vatroslav/cijene)"
@@ -34,6 +35,8 @@ STORES = [
      "spar_code": "8728"},
     {"id": "konzum", "chain": "konzum", "name": "Konzum", "address": "Marina Getaldića 1",
      "konzum_code": "0208"},
+    {"id": "lidl", "chain": "lidl", "name": "Lidl", "address": "Ul. kneza Ljudevita Posavskog 55",
+     "lidl_code": "240"},
 ]
 
 # Stupci po lancu (nazivi zaglavlja lowercase, tuple = prihvatljive varijante).
@@ -55,6 +58,15 @@ COLUMNS = {
         # Konzumovo zaglavlje ima tipfeler "posljednih" - prihvaćaju se oba oblika
         "low30": ("najniža cijena u posljednjih 30 dana", "najniža cijena u posljednih 30 dana"),
         "barcode": "barkod", "category": "kategorija proizvoda",
+    },
+    "lidl": {
+        # neto_količina je samo broj; jedinica_mjere je opis pakiranja ("1,5l", "800g")
+        "name": "naziv", "code": "šifra", "brand": "marka", "qty": "jedinica_mjere",
+        "unit": None, "price": "maloprodajna_cijena",
+        "unit_price": "cijena_za_jedinicu_mjere",
+        "special": "mpc_za_vrijeme_posebnog_oblika_prodaje",
+        "low30": "najniza_cijena_u_poslj._30_dana",
+        "barcode": "barkod", "category": "kategorija_proizvoda",
     },
     "zabac": {
         "name": "naziv artikla", "code": "šifra artikla", "brand": "marka", "qty": "gramaža",
@@ -164,7 +176,64 @@ def fetch_zabac(store):
     raise NotAvailable("Žabac: nema dostupnog cjenika")
 
 
-FETCHERS = {"spar": fetch_spar, "konzum": fetch_konzum, "zabac": fetch_zabac}
+LIDL = "https://tvrtka.lidl.hr"
+LIDL_INDEX = [f"{LIDL}/cijene/cijene-u-trgovinama", f"{LIDL}/cijene"]
+
+
+def lidl_zip_date(href):
+    """Datum iz imena ZIP-a. Lidl ih imenuje ručno ("..._na_dan_18_09_2026", "Cijene_14.07."),
+    pa se gleda samo ime datoteke, a godina može nedostajati."""
+    name = urllib.parse.unquote(href).rsplit("/", 1)[-1].removesuffix(".zip")
+    for m in re.finditer(r"(\d{1,2})[._\s-]+(\d{1,2})(?:[._\s-]+(\d{4}))?", name):
+        day, month, year = int(m[1]), int(m[2]), int(m[3] or dt.date.today().year)
+        try:
+            return dt.date(year, month, day)
+        except ValueError:
+            continue
+    return None
+
+
+def csv_from_zip(raw: bytes, prefix: str):
+    """CSV prodavaonice iz ZIP-a; ZIP zna biti ugniježđen u ZIP ili imati podfolder."""
+    with zipfile.ZipFile(io.BytesIO(raw)) as z:
+        for name in z.namelist():
+            if name.rsplit("/", 1)[-1].startswith(prefix) and name.lower().endswith(".csv"):
+                return z.read(name), name
+        for name in z.namelist():
+            if name.lower().endswith(".zip"):
+                found = csv_from_zip(z.read(name), prefix)
+                if found:
+                    return found
+    return None
+
+
+def fetch_lidl(store):
+    links = {}
+    for index in LIDL_INDEX:
+        try:
+            page_html = get(index).decode("utf-8", "replace")
+        except NotAvailable:
+            continue
+        for href in re.findall(r'href="([^"]+\.zip)"', page_html):
+            d = lidl_zip_date(href)
+            if d:
+                links[urllib.parse.urljoin(LIDL, html.unescape(href))] = d
+    oldest = dt.date.today() - dt.timedelta(days=DAYS_BACK)
+    for url, d in sorted(links.items(), key=lambda kv: kv[1], reverse=True):
+        if d < oldest:
+            break
+        try:
+            found = csv_from_zip(get(url), f"Supermarket {store['lidl_code']}_")
+        except (NotAvailable, zipfile.BadZipFile):
+            continue
+        if found:
+            # pravi datum je u imenu CSV-a ("..._18.09.2026_7.15h.csv"), ime ZIP-a je samo naznaka
+            m = re.search(r"_(\d{1,2})\.(\d{1,2})\.(\d{4})_", found[1])
+            return found[0], dt.date(int(m[3]), int(m[2]), int(m[1])) if m else d, url
+    raise NotAvailable("Lidl: nema cjenika za zadnjih %d dana" % DAYS_BACK)
+
+
+FETCHERS = {"spar": fetch_spar, "konzum": fetch_konzum, "zabac": fetch_zabac, "lidl": fetch_lidl}
 
 
 # --- parsiranje ---------------------------------------------------------------
@@ -209,6 +278,10 @@ def unit_label(qty: str, unit: str, chain: str) -> str:
     elif chain == "konzum":
         parts = (qty or "").split()
         u = parts[-1] if len(parts) > 1 else ""
+    elif chain == "lidl":
+        # cijena po jedinici je po kg ili L, ovisno o pakiranju ("800g", "1,5l")
+        m = re.search(r"\d\s*(kg|g|ml|l)\b", (qty or "").lower())
+        u = {"kg": "kg", "g": "kg", "ml": "L", "l": "L"}[m[1]] if m else ""
     else:
         u = ""
     return UNITS.get(u.lower(), u)
@@ -233,10 +306,18 @@ def parse(raw: bytes, chain: str):
         i = idx.get(field)
         return row[i].strip() if i is not None and i < len(row) else ""
 
-    items = []
+    items, seen = [], {}
     for row in reader:
         if not row or not val(row, "name"):
             continue
+        # Lidl ponavlja isti artikl (istu šifru) u više redaka, po jedan za svaki barkod.
+        # Ostaje jedan redak, s EAN-13 barkodom ako ga ima (on se poklapa s drugim lancima).
+        code = val(row, "code")
+        if chain == "lidl" and code in seen:
+            if len(val(row, "barcode")) == 13 and len(items[seen[code]]["barcode"]) != 13:
+                items[seen[code]]["barcode"] = val(row, "barcode")
+            continue
+        seen[code] = len(items)
         qty_raw, unit = val(row, "qty"), val(row, "unit")
         items.append({
             "name": re.sub(r"\s+", " ", val(row, "name")),

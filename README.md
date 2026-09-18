@@ -1,6 +1,6 @@
 # Cijene - Velika Gorica
 
-Koja od četiri trgovine u Velikoj Gorici ima ono što tražim - iz njihovih dnevnih cjenika.
+Koja od pet trgovina u Velikoj Gorici ima ono što tražim - iz njihovih dnevnih cjenika.
 
 - **Pretraga:** neizrazita ("grčki jogurt" nalazi i "JOG.GRČ.TIP"), relevantno prvo; svaki
   proizvod pokazuje u kojoj trgovini ga ima (i po kojoj cijeni).
@@ -15,6 +15,7 @@ Koja od četiri trgovine u Velikoj Gorici ima ono što tražim - iz njihovih dne
 | Spar | Matice hrvatske 22 |
 | Interspar | Rakarska ulica 13 |
 | Konzum (hipermarket) | Marina Getaldića 1 |
+| Lidl | Ul. kneza Ljudevita Posavskog 55 |
 
 ## Kako radi
 
@@ -37,6 +38,6 @@ Samo standardna Python biblioteka, bez ovisnosti.
 
 ## Dodavanje trgovine
 
-Nova prodavaonica postojećeg lanca (Spar/Interspar, Konzum, Žabac) = novi unos u `STORES` u
+Nova prodavaonica postojećeg lanca (Spar/Interspar, Konzum, Žabac, Lidl) = novi unos u `STORES` u
 `scripts/fetch.py` sa šifrom prodavaonice iz naziva datoteke cjenika. Novi lanac traži svoju
 `fetch_*` funkciju i mapiranje stupaca u `COLUMNS`.
