@@ -1,7 +1,11 @@
 # Cijene - Velika Gorica
 
-Pretraga dnevnih cjenika četiri trgovine u Velikoj Gorici, s usporedbom cijene istog proizvoda
-(po barkodu) među trgovinama.
+Koja od četiri trgovine u Velikoj Gorici ima ono što tražim - iz njihovih dnevnih cjenika.
+
+- **Pretraga:** neizrazita ("grčki jogurt" nalazi i "JOG.GRČ.TIP"), relevantno prvo; svaki
+  proizvod pokazuje u kojoj trgovini ga ima (i po kojoj cijeni).
+- **Popis:** stavke za kupovinu -> koliko ih svaka trgovina ima (npr. Interspar 14/15).
+  Popis se čuva u pregledniku (localStorage), ne ide nikamo.
 
 **Aplikacija:** https://vatroslav.github.io/cijene/
 

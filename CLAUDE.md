@@ -4,6 +4,10 @@ Javni repo: pretraga dnevnih cjenika četiri trgovine u Velikoj Gorici (Žabac, 
 hrvatske 22, Interspar Rakarska 13, Konzum hipermarket Marina Getaldića 1). Korisnici su Vatra i
 Monika, uglavnom na mobitelu. Opis i pokretanje: `README.md`.
 
+**Cilj je dostupnost, ne cijena** (Vatra, 18.9.2026.): u kojoj trgovini ima sve s popisa i gdje
+ima određeni proizvod. Razlike u cijeni su minorne - cijena je sekundarna informacija, ne
+isticati "najjeftinije". Pretraga je neizrazita, relevantno prvo.
+
 ## Arhitektura
 - `scripts/fetch.py` - preuzimanje i normalizacija, samo standardna biblioteka. Izlaz `site/data.json` (ne commita se).
 - `site/` - statična aplikacija (vanilla JS), bez build koraka.

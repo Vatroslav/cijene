@@ -9,22 +9,45 @@
 <body>
   <header>
     <h1>Cijene <span>Velika Gorica</span></h1>
-    <input id="q" type="search" placeholder="Proizvod, marka ili barkod" autocomplete="off" autofocus>
+    <nav class="tabs">
+      <button data-view="search" class="tab on">Pretraga</button>
+      <button data-view="list" class="tab">Popis <span id="listCount"></span></button>
+    </nav>
     <div id="stores" class="chips"></div>
-    <div class="filters">
-      <select id="category"><option value="">Sve kategorije</option></select>
-      <select id="sort">
-        <option value="price">Najjeftinije</option>
-        <option value="unit">Cijena po jedinici</option>
-        <option value="name">Naziv</option>
-      </select>
-      <label><input id="sale" type="checkbox"> Samo akcije</label>
-    </div>
+    <section id="searchBar">
+      <input id="q" type="search" placeholder="Proizvod, marka ili barkod" autocomplete="off" autofocus>
+      <div class="filters">
+        <select id="category"><option value="">Sve kategorije</option></select>
+        <select id="sort">
+          <option value="rel">Najrelevantnije</option>
+          <option value="name">Naziv</option>
+          <option value="price">Najjeftinije</option>
+          <option value="unit">Cijena po jedinici</option>
+        </select>
+        <label><input id="sale" type="checkbox"> Samo akcije</label>
+      </div>
+    </section>
+    <section id="listBar" hidden>
+      <div class="add">
+        <textarea id="newItem" rows="1" placeholder="Dodaj stavku"></textarea>
+        <button id="addItem">Dodaj</button>
+      </div>
+    </section>
   </header>
   <main>
-    <p id="status">Učitavam cjenike...</p>
-    <ul id="results"></ul>
-    <button id="more" hidden>Prikaži još</button>
+    <section id="searchView">
+      <p id="status">Učitavam cjenike...</p>
+      <ul id="results"></ul>
+      <button id="more" hidden>Prikaži još</button>
+    </section>
+    <section id="listView" hidden>
+      <div id="coverage"></div>
+      <table id="listTable"></table>
+      <p class="hint">Stavka je riječ ili više riječi (npr. "tofu", "kokosovo mlijeko") - traži se u nazivu i marki.
+        Gumbom "+ Popis" u pretrazi dodaješ baš određeni proizvod (po barkodu).
+        Cjenik pokazuje što trgovina drži u asortimanu, ne je li danas na polici.</p>
+      <button id="clearList" class="link">Obriši popis</button>
+    </section>
   </main>
   <footer id="sources"></footer>
   <script src="app.js"></script>
