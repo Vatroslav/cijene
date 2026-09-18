@@ -8,8 +8,17 @@ Monika, uglavnom na mobitelu. Opis i pokretanje: `README.md`.
 ima određeni proizvod. Razlike u cijeni su minorne - cijena je sekundarna informacija, ne
 isticati "najjeftinije". Pretraga je neizrazita, relevantno prvo.
 
+## "Koja trgovina ima sve s popisa?"
+Pokrenuti `python scripts/popis.py --detalji` (default popis "Špeža"; drugi popis kao argument).
+Popis čita kroz `~/github/fitness-coach/scripts/ourgroceries.py` - samo na zahtjev, nikad u petlji.
+✓ = proizvod pogađa sve riječi stavke. ~ = samo dio: kandidati su grupirani po pogođenim
+riječima (`[zobeno] Alpro Oat Drink`), a pravi pogodak treba **semantički procijeniti** iz
+naziva i Vatri odgovoriti po trgovini, a ne prepisati tablicu. Lažni pogoci su česti kod kratica
+("baterije" -> "BAT.AIRWICK").
+
 ## Arhitektura
 - `scripts/fetch.py` - preuzimanje i normalizacija, samo standardna biblioteka. Izlaz `site/data.json` (ne commita se).
+- `scripts/popis.py` - OurGroceries popis -> pokrivenost po trgovini (lokalno, ne ide na stranicu).
 - `site/` - statična aplikacija (vanilla JS), bez build koraka.
 - `.github/workflows/update.yml` - dnevno preuzimanje + deploy na GitHub Pages (artifact, podaci nisu u gitu).
 

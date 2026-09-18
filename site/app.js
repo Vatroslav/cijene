@@ -81,7 +81,7 @@ function termScore(t, w) {
   if (w === t) return 3;
   if (w.startsWith(t)) return 2;
   if (w.length >= 3 && t.startsWith(w)) return 1.5;
-  if (t.length >= 4 && w.length >= 4 && commonPrefix(t, w) >= Math.max(4, Math.min(t.length, w.length) - 2)) return 1.2;
+  if (t.length >= 4 && w.length >= 4 && commonPrefix(t, w) >= Math.max(3, Math.min(t.length, w.length) - 1)) return 1.2;
   if (t.length >= 3 && w.includes(t)) return 1;
   if (t.length >= 5 && oneEdit(t, w)) return 1;
   return 0;
@@ -131,8 +131,10 @@ function renderSources(generated) {
   const items = stores.map((s) => s.error
     ? `${s.name} (${s.address}): cjenik trenutno nedostupan`
     : `<a href="${s.source}">${s.name}</a> (${s.address}): cjenik ${fmtDate(s.date)}`);
-  $("sources").innerHTML = `Izvor: javni cjenici trgovaca (NN 75/2025). ${items.join(" · ")} · ` +
-    `Osvježeno ${new Date(generated).toLocaleString("hr-HR")}.`;
+  $("sources").innerHTML = `Izvor: javni cjenici trgovaca (NN 75/2025). ${items.join(" · ")}`;
+  const g = new Date(generated);
+  $("updated").textContent = `ažurirano ${g.getDate()}.${g.getMonth() + 1}. u ` +
+    g.toLocaleTimeString("hr-HR", { hour: "2-digit", minute: "2-digit" });
 }
 
 function renderAll() { renderSearch(); renderList(); }
@@ -178,15 +180,16 @@ function card(p, act) {
   const li = document.createElement("li");
   li.className = "product";
   const meta = [p.brand, p.qty, p.barcode].filter(Boolean).join(" · ");
-  const rows = act.map((i) => {
+  const has = (i) => p.offers.get(i)?.now != null;
+  const missing = act.filter((i) => !has(i)).map((i) => stores[i].name);
+  const rows = act.filter(has).map((i) => {
     const o = p.offers.get(i);
-    if (!o || o.now == null) return `<tr class="none"><td>${stores[i].name}</td><td class="price">nema</td><td class="unit"></td></tr>`;
     const onSale = o.special != null && o.price != null && o.special < o.price;
     const price = onSale ? `<span class="old">${eur(o.price)}</span><span class="salep">${eur(o.now)}</span>` : eur(o.now);
     const unit = o.unitPrice != null && o.unit ? `${eur(o.unitPrice)}/${o.unit}` : "";
     const tag = o.special != null ? `<span class="tag">akcija</span>` : "";
     return `<tr><td><span class="yes">✓</span> ${stores[i].name}${tag}</td><td class="price">${price}</td><td class="unit">${unit}</td></tr>`;
-  }).join("");
+  }).join("") + (missing.length ? `<tr class="none"><td colspan="3">Nema: ${missing.join(", ")}</td></tr>` : "");
   const onList = p.barcode && list.some((it) => it.barcode === p.barcode);
   li.innerHTML = `<div class="phead"><div><div class="pname"></div><div class="pmeta"></div></div>` +
     (p.barcode ? `<button class="addp${onList ? " done" : ""}">${onList ? "Na popisu" : "+ Popis"}</button>` : "") +
