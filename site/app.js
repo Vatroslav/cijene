@@ -165,7 +165,7 @@ function renderSearch() {
     act.forEach((i) => { if (p.offers.has(i)) perStore.set(i, perStore.get(i) + 1); });
     hits.push({ p, sc, n: offers.length, min: Math.min(...offers.map((o) => o.now)), unit: Math.min(...offers.map((o) => o.unitPrice ?? Infinity)) });
   }
-  if (sort === "rel") hits.sort((a, b) => b.sc - a.sc || b.n - a.n || a.p.name.length - b.p.name.length);
+  if (sort === "rel" || sort === "store") hits.sort((a, b) => b.sc - a.sc || b.n - a.n || a.p.name.length - b.p.name.length);
   if (sort === "price") hits.sort((a, b) => a.min - b.min);
   if (sort === "unit") hits.sort((a, b) => a.unit - b.unit);
   if (sort === "name") hits.sort((a, b) => a.p.name.localeCompare(b.p.name, "hr"));
@@ -173,8 +173,33 @@ function renderSearch() {
   $("status").innerHTML = hits.length
     ? `${hits.length.toLocaleString("hr-HR")} proizvoda: ` + act.map((i) => `${esc(stores[i].name)} <b>${perStore.get(i)}</b>`).join(" · ")
     : "Ništa nije pronađeno.";
+  if (sort === "store") {
+    // po trgovini: sekcija za svaku trgovinu, najrelevantnije prvo; "Prikaži još" vrijedi za svaku sekciju
+    let more = false;
+    for (const i of act) {
+      const rows = hits.filter((h) => h.p.offers.get(i)?.now != null);
+      if (rows.length) ul.append(storeSection(i, rows.slice(0, shown), rows.length));
+      more ||= rows.length > shown;
+    }
+    $("more").hidden = !more;
+    return;
+  }
   for (const h of hits.slice(0, shown)) ul.append(card(h.p, act));
   $("more").hidden = hits.length <= shown;
+}
+
+function storeSection(i, rows, total) {
+  const li = document.createElement("li");
+  li.className = "product store-section";
+  li.innerHTML = `<details open><summary><b>${esc(stores[i].name)}</b> <span class="pmeta">${total} proizvoda</span></summary>` +
+    `<table>${rows.map(({ p }) => {
+      const o = p.offers.get(i);
+      const onSale = o.special != null && o.price != null && o.special < o.price;
+      const price = onSale ? `<span class="old">${eur(o.price)}</span><span class="salep">${eur(o.now)}</span>` : eur(o.now);
+      const tag = o.special != null ? `<span class="tag">akcija</span>` : "";
+      return `<tr><td>${esc(o.name)}${tag} <span class="pmeta">${esc(p.qty || "")}</span></td><td class="price">${price}</td></tr>`;
+    }).join("")}</table></details>`;
+  return li;
 }
 
 function card(p, act) {
