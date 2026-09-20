@@ -4,7 +4,9 @@
 const MJESECI = ['siječnja', 'veljače', 'ožujka', 'travnja', 'svibnja', 'lipnja',
   'srpnja', 'kolovoza', 'rujna', 'listopada', 'studenoga', 'prosinca'];
 const KORAK = 30;
+// Izbor trgovina i upisana pretraga ostaju na uređaju do sljedećeg otvaranja.
 const IZBOR = 'akcije-trgovine';
+const PRETRAGA = 'akcije-pretraga';
 
 let stores = [];
 let items = [];
@@ -45,6 +47,12 @@ function spremiIzbor() {
   } catch (e) { /* privatni način rada - izbor se jednostavno ne pamti */ }
 }
 
+function spremiPretragu() {
+  try {
+    localStorage.setItem(PRETRAGA, el('q').value);
+  } catch (e) { /* isto - bez pamćenja, stranica i dalje radi */ }
+}
+
 /* --- podaci --- */
 
 function slozi(data) {
@@ -54,9 +62,7 @@ function slozi(data) {
   stores = data.stores.map((s) => ({ ...s, on: false }));
   const spremljeno = ucitajIzbor();
   stores.forEach((s) => {
-    // Žabac je isključen dok ga korisnik ne uključi - nema označenih akcija,
-    // pa bi njegovih pet tisuća artikala zatrpalo ostale trgovine.
-    s.on = spremljeno ? spremljeno.includes(s.id) : (s.chain !== 'zabac' && !s.error);
+    s.on = spremljeno ? spremljeno.includes(s.id) : !s.error;
   });
 
   // Ista akcija u dvije prodavaonice istog lanca (Eurospin, Lidl) ide u jedan redak.
@@ -257,7 +263,10 @@ async function start() {
     vidljivo = KORAK;
     crtaj();
   });
-  el('q').addEventListener('input', () => { vidljivo = KORAK; crtaj(); });
+  el('q').addEventListener('input', () => { vidljivo = KORAK; spremiPretragu(); crtaj(); });
+  try {
+    el('q').value = localStorage.getItem(PRETRAGA) || '';
+  } catch (e) { /* bez spremljene pretrage kreće se od praznog polja */ }
   el('more').addEventListener('click', () => { vidljivo += KORAK; crtaj(); });
 
   try {

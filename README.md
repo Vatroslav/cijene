@@ -64,8 +64,10 @@ PWA - može se dodati na početni zaslon i otvara se kao aplikacija.
 
 Proizvod je na akciji kad trgovina u cjeniku popuni akcijsku cijenu; za usporedbu se pokazuje
 redovna cijena ili, kad je nema, najniža cijena u zadnjih 30 dana. Žabac je outlet i nema stupac
-akcijske cijene - isključen je dok ga korisnik ne uključi, uz napomenu. KTC u Velikoj Gorici
-objavljuje prazan cjenik, pa se prikazuje kao trgovina bez cjenika.
+akcijske cijene - ide sa svim artiklima i napomenom, ispod proizvoda s pravim popustom. KTC u
+Velikoj Gorici objavljuje prazan cjenik, pa se prikazuje kao trgovina bez cjenika.
+
+Izbor trgovina i upisana pretraga pamte se u pregledniku (localStorage) i ne idu nikamo.
 
 Ikone se ne generiraju pri svakom objavljivanju - po potrebi ručno:
 

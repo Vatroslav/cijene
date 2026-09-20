@@ -55,8 +55,8 @@ naziva i Vatri odgovoriti po trgovini, a ne prepisati tablicu. Lažni pogoci su 
 - **Plodine:** popis je na `/info-o-cijenama`; stara adresa `/cjenici` vraća 403 i pregledniku.
   Jedan dnevni ZIP sa svim prodavaonicama, šifra prodavaonice je treći element s kraja imena CSV-a.
   Cijene znaju biti pisane bez vodeće nule (`,75`).
-- **Žabac** nema stupac akcijske cijene jer je outlet - cijeli asortiman je sniženi. Na stranici
-  je zato isključen dok ga korisnik ne uključi, uz napomenu.
+- **Žabac** nema stupac akcijske cijene jer je outlet - cijeli asortiman je sniženi. Zato na
+  stranici ide sa svim artiklima i napomenom; sortiranje po popustu ga gura ispod pravih akcija.
 
 ## Pravila
 - Ne dodavati ovisnosti ni build korak bez jasnog razloga - jednostavnost je namjerna.
