@@ -7,10 +7,12 @@ const KORAK = 30;
 // Izbor trgovina i upisana pretraga ostaju na uređaju do sljedećeg otvaranja.
 const IZBOR = 'akcije-trgovine';
 const PRETRAGA = 'akcije-pretraga';
+const PRIKAZ = 'akcije-prikaz';
 
 let stores = [];
 let items = [];
 let vidljivo = KORAK;
+let grupiranje = 'product';   // "product" | "store"
 
 const el = (id) => document.getElementById(id);
 
@@ -127,7 +129,7 @@ function filtrirani() {
 
 /* --- prikaz --- */
 
-function kartica(it) {
+function kartica(it, uSekciji) {
   const li = document.createElement('li');
   li.className = 'item';
 
@@ -144,10 +146,13 @@ function kartica(it) {
     li.append(m);
   }
 
-  const gdje = document.createElement('p');
-  gdje.className = 'store';
-  gdje.textContent = nabroji([...new Set(it.stores.map((i) => oznaka(i)))]);
-  li.append(gdje);
+  // u prikazu po trgovini naziv trgovine već stoji u naslovu sekcije
+  if (!uSekciji) {
+    const gdje = document.createElement('p');
+    gdje.className = 'store';
+    gdje.textContent = nabroji([...new Set(it.stores.map((i) => oznaka(i)))]);
+    li.append(gdje);
+  }
 
   const red = document.createElement('div');
   red.className = 'prices';
@@ -185,12 +190,44 @@ function kartica(it) {
   return li;
 }
 
+function sekcija(i, vidljiviDio, ukupno) {
+  const li = document.createElement('li');
+  li.className = 'sekcija';
+  const det = document.createElement('details');
+  det.open = true;
+  const sum = document.createElement('summary');
+  const naziv = document.createElement('b');
+  naziv.textContent = oznaka(i);
+  const broj = document.createElement('span');
+  broj.textContent = `${ukupno} ${ukupno === 1 ? 'proizvod' : 'proizvoda'}`;
+  sum.append(naziv, broj);
+  const popis = document.createElement('ul');
+  vidljiviDio.forEach((it) => popis.append(kartica(it, true)));
+  det.append(sum, popis);
+  li.append(det);
+  return li;
+}
+
 function crtaj() {
   const lista = filtrirani();
   const ul = el('results');
   ul.textContent = '';
-  lista.slice(0, vidljivo).forEach((it) => ul.append(kartica(it)));
-  el('more').hidden = lista.length <= vidljivo;
+
+  if (grupiranje === 'store') {
+    // sekcija po trgovini, "Prikaži još" vrijedi za svaku sekciju
+    let jos = false;
+    stores.forEach((s, i) => {
+      if (!s.on) return;
+      const njeni = lista.filter((it) => it.stores.includes(i));
+      if (!njeni.length) return;
+      ul.append(sekcija(i, njeni.slice(0, vidljivo), njeni.length));
+      jos = jos || njeni.length > vidljivo;
+    });
+    el('more').hidden = !jos;
+  } else {
+    lista.slice(0, vidljivo).forEach((it) => ul.append(kartica(it, false)));
+    el('more').hidden = lista.length <= vidljivo;
+  }
 
   const naAkciji = lista.filter((it) => it.akcija).length;
   if (!stores.some((s) => s.on)) {
@@ -263,6 +300,24 @@ async function start() {
     vidljivo = KORAK;
     crtaj();
   });
+  try {
+    grupiranje = localStorage.getItem(PRIKAZ) === 'store' ? 'store' : 'product';
+  } catch (e) { /* ostaje prikaz po proizvodu */ }
+  document.querySelectorAll('#prikaz button').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.dataset.group === grupiranje));
+    b.addEventListener('click', () => {
+      grupiranje = b.dataset.group;
+      document.querySelectorAll('#prikaz button').forEach((x) => {
+        x.setAttribute('aria-pressed', String(x.dataset.group === grupiranje));
+      });
+      try {
+        localStorage.setItem(PRIKAZ, grupiranje);
+      } catch (e) { /* izbor se ne pamti, prikaz i dalje radi */ }
+      vidljivo = KORAK;
+      crtaj();
+    });
+  });
+
   el('q').addEventListener('input', () => { vidljivo = KORAK; spremiPretragu(); crtaj(); });
   try {
     el('q').value = localStorage.getItem(PRETRAGA) || '';

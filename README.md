@@ -67,7 +67,9 @@ redovna cijena ili, kad je nema, najniža cijena u zadnjih 30 dana. Žabac je ou
 akcijske cijene - ide sa svim artiklima i napomenom, ispod proizvoda s pravim popustom. KTC u
 Velikoj Gorici objavljuje prazan cjenik, pa se prikazuje kao trgovina bez cjenika.
 
-Izbor trgovina i upisana pretraga pamte se u pregledniku (localStorage) i ne idu nikamo.
+Prikaz može biti **po proizvodu** (sve akcije zajedno, najveći popust prvo) ili **po trgovini**
+(sekcija za svaku trgovinu, sklapa se). Izbor trgovina, način prikaza i upisana pretraga pamte se
+u pregledniku (localStorage) i ne idu nikamo.
 
 Ikone se ne generiraju pri svakom objavljivanju - po potrebi ručno:
 

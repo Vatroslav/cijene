@@ -444,10 +444,11 @@ def parse(raw: bytes, chain: str):
     for row in reader:
         if not row or not val(row, "name"):
             continue
-        # Lidl ponavlja isti artikl (istu šifru) u više redaka, po jedan za svaki barkod.
-        # Ostaje jedan redak, s EAN-13 barkodom ako ga ima (on se poklapa s drugim lancima).
+        # Lidl i Eurospin ponavljaju isti artikl (istu šifru) u više redaka, po jedan za
+        # svaki barkod. Ostaje jedan redak, s EAN-13 barkodom ako ga ima (on se poklapa
+        # s drugim lancima).
         code = val(row, "code")
-        if chain == "lidl" and code in seen:
+        if chain in ("lidl", "eurospin") and code in seen:
             if len(val(row, "barcode")) == 13 and len(items[seen[code]]["barcode"]) != 13:
                 items[seen[code]]["barcode"] = val(row, "barcode")
             continue
