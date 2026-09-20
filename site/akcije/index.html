@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Akcije - Sisak i Velika Gorica</title>
+  <meta name="description" content="Proizvodi na akciji u trgovinama u Sisku i Velikoj Gorici, iz dnevnih cjenika.">
+  <meta name="theme-color" content="#c2410c">
+  <link rel="manifest" href="manifest.webmanifest?v=dev">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Akcije">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="style.css?v=dev">
+</head>
+<body>
+  <header>
+    <h1>Akcije</h1>
+    <p id="updated" class="sub">Učitavam...</p>
+    <label class="search">
+      <span class="sr">Traži proizvod</span>
+      <input id="q" type="search" placeholder="Traži proizvod" autocomplete="off" enterkeyhint="search">
+    </label>
+    <button id="filtersToggle" type="button" aria-expanded="false" aria-controls="filters">
+      Odaberi trgovine
+    </button>
+    <div id="filters" hidden>
+      <div id="stores" class="chips"></div>
+      <button id="allStores" type="button" class="plain">Uključi sve trgovine</button>
+    </div>
+  </header>
+
+  <main>
+    <p id="note" class="note" hidden></p>
+    <p id="status">Učitavam cjenike...</p>
+    <ul id="results"></ul>
+    <button id="more" type="button" hidden>Prikaži još</button>
+  </main>
+
+  <footer>
+    <p id="sources"></p>
+    <p>Cijene su iz dnevnih cjenika koje trgovine same objavljuju. Provjeri cijenu na polici.</p>
+  </footer>
+
+  <script src="app.js?v=dev"></script>
+</body>
+</html>

@@ -32,7 +32,10 @@ jobs:
       # Pages dopušta pregledniku da CSS/JS drži 10 minuta; verzija u linku tjera novi dohvat
       # nakon deploya, inače novi HTML dođe sa starim stilom.
       - name: Verzija CSS/JS
-        run: sed -i "s/?v=dev/?v=${GITHUB_SHA::7}/g" site/index.html
+        run: |
+          sed -i "s/?v=dev/?v=${GITHUB_SHA::7}/g" site/index.html site/akcije/index.html
+          # service worker drži svoju predmemoriju - bez nove verzije bi serviral staru stranicu
+          sed -i "s/const VERSION = 'dev'/const VERSION = '${GITHUB_SHA::7}'/" site/akcije/sw.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

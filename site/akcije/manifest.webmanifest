@@ -1,0 +1,17 @@
+{
+  "name": "Akcije - Sisak i Velika Gorica",
+  "short_name": "Akcije",
+  "description": "Proizvodi na akciji u trgovinama u Sisku i Velikoj Gorici, iz dnevnih cjenika.",
+  "lang": "hr",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#c2410c",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

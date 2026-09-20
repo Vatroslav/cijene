@@ -38,6 +38,37 @@ Samo standardna Python biblioteka, bez ovisnosti.
 
 ## Dodavanje trgovine
 
-Nova prodavaonica postojećeg lanca (Spar/Interspar, Konzum, Žabac, Lidl) = novi unos u `STORES` u
-`scripts/fetch.py` sa šifrom prodavaonice iz naziva datoteke cjenika. Novi lanac traži svoju
-`fetch_*` funkciju i mapiranje stupaca u `COLUMNS`.
+Nova prodavaonica postojećeg lanca (Spar/Interspar, Konzum, Žabac, Lidl, KTC, Eurospin, Plodine) =
+novi unos u `STORES` (ili `STORES_SALE`) u `scripts/fetch.py` sa šifrom prodavaonice iz naziva
+datoteke cjenika. Novi lanac traži svoju `fetch_*` funkciju i mapiranje stupaca u `COLUMNS`.
+
+## Akcije - Sisak i Velika Gorica
+
+Druga, zasebna stranica: **https://vatroslav.github.io/cijene/akcije/**
+
+Popis proizvoda koji su danas na akciji, u devet prodavaonica. Prilagođena je starijim
+korisnicima na mobitelu (krupan tekst, jak kontrast, veliki gumbi, jedan stupac) i radi kao
+PWA - može se dodati na početni zaslon i otvara se kao aplikacija.
+
+| Trgovina | Adresa | Grad |
+|---|---|---|
+| KTC | Nikole Tesle 12B | Sisak |
+| KTC | Zagrebačka 49 | Sisak |
+| KTC | Trg kralja Petra Krešimira IV 1 | Velika Gorica |
+| Eurospin | Zagrebačka 49G | Sisak |
+| Eurospin | Ulica Juraja Dobrile 1C | Velika Gorica |
+| Lidl | Zagrebačka 49f | Sisak |
+| Lidl | Ul. kneza Ljudevita Posavskog 55 | Velika Gorica |
+| Plodine | Ul. kneza Ljudevita Posavskog 47 | Velika Gorica |
+| Žabac | Trg grada Vukovara 8 | Velika Gorica |
+
+Proizvod je na akciji kad trgovina u cjeniku popuni akcijsku cijenu; za usporedbu se pokazuje
+redovna cijena ili, kad je nema, najniža cijena u zadnjih 30 dana. Žabac je outlet i nema stupac
+akcijske cijene - isključen je dok ga korisnik ne uključi, uz napomenu. KTC u Velikoj Gorici
+objavljuje prazan cjenik, pa se prikazuje kao trgovina bez cjenika.
+
+Ikone se ne generiraju pri svakom objavljivanju - po potrebi ručno:
+
+```bash
+python scripts/ikone.py site/akcije
+```
