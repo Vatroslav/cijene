@@ -13,7 +13,7 @@ isticati "najjeftinije". Pretraga je neizrazita, relevantno prvo.
 Cijeli postupak je globalni skill `popis` (`~/.claude/skills/popis/SKILL.md`) - ovo je sažetak.
 Pokrenuti `python scripts/popis.py --detalji` (default popis "Špeža"; drugi popis kao argument;
 određeni proizvod bez OurGroceriesa: `--stavka "grčki jogurt" --detalji --sve`).
-Popis čita kroz `~/github/fitness-coach/scripts/ourgroceries.py` - samo na zahtjev, nikad u petlji.
+Popis čita kroz `~/github/health/scripts/ourgroceries.py` - samo na zahtjev, nikad u petlji.
 ✓ = proizvod pogađa sve riječi stavke. ~ = samo dio: kandidati su grupirani po pogođenim
 riječima (`[zobeno] Alpro Oat Drink`), a pravi pogodak treba **semantički procijeniti** iz
 naziva i Vatri odgovoriti po trgovini, a ne prepisati tablicu. Lažni pogoci su česti kod kratica

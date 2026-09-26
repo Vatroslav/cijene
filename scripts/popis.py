@@ -6,7 +6,7 @@
     python scripts/popis.py --lokalno       cjenici iz site/data.json umjesto s objavljene stranice
     python scripts/popis.py --stavka "grčki jogurt" [--stavka ...]   bez OurGroceriesa, zadane stavke
 
-Popis se čita kroz skriptu u fitness-coach repou (ondje je prijava, lokalno) - jednom po
+Popis se čita kroz skriptu u health repou (ondje je prijava, lokalno) - jednom po
 pokretanju, na zahtjev, nikad u petlji. Ništa se ne zapisuje ni ne objavljuje, a popis ne
 izlazi s računala.
 
@@ -23,7 +23,7 @@ import urllib.request
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-OG_SCRIPTS = Path.home() / "github" / "fitness-coach" / "scripts"
+OG_SCRIPTS = Path.home() / "github" / "health" / "scripts"
 DATA_URL = "https://vatroslav.github.io/cijene/data.json"
 DEFAULT_LIST = "Špeža"
 # Veznici i prijedlozi iz prirodnog opisa stavke ("povrće za juhu") ne nose značenje za pretragu
@@ -170,7 +170,7 @@ def products_of(data):
 
 def read_list(name):
     sys.path.insert(0, str(OG_SCRIPTS))
-    import ourgroceries as og  # noqa: E402 - skripta iz fitness-coach repoa
+    import ourgroceries as og  # noqa: E402 - skripta iz health repoa
 
     client = og.load_client()
     found = [sl for sl in client.lists() if sl.get("name", "").lower() == name.lower()]
