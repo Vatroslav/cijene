@@ -29,6 +29,9 @@ naziva i Vatri odgovoriti po trgovini, a ne prepisati tablicu. Lažni pogoci su 
   prilagođena starijim korisnicima na mobitelu (krupan tekst, jak kontrast, veliki gumbi).
   Zasebne datoteke, ne dijeli CSS ni JS s glavnom stranicom.
 - `.github/workflows/update.yml` - dnevno preuzimanje + deploy na GitHub Pages (artifact, podaci nisu u gitu).
+  Trgovina koja ne prođe ni drugo pokretanje zaredom ruši run nakon objave (`alarm()` u `fetch.py`,
+  job `provjera`) - zeleni run znači da nijedna trgovina ne ispada dulje od jednog pokretanja
+  (osim izuzetih s `"alarm": False`).
 
 ## Zamke izvora
 Kako koji lanac objavljuje cjenike (Konzum 404, Spar 403, Lidl, KTC, Eurospin, Plodine...) je u

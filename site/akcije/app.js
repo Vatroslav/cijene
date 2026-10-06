@@ -80,6 +80,7 @@ function slozi(data) {
     const special = row[f.special];
     const price = row[f.price];
     const low30 = row[f.low30];
+    const anchor = row[f.anchor];
     let ref = null, refLabel = '';
     if (special && price && price > special) {
       ref = price;
@@ -87,6 +88,10 @@ function slozi(data) {
     } else if (special && low30 && low30 > special) {
       ref = low30;
       refLabel = 'najniža cijena u zadnjih 30 dana';
+    } else if (special && anchor && anchor > special) {
+      // Plodine ne objavljuju ni redovnu ni najnižu cijenu u 30 dana, samo sidrenu
+      ref = anchor;
+      refLabel = 'cijena na dan 2. svibnja 2025.';
     }
     po.set(kljuc, {
       stores: [row[f.store]],
@@ -172,8 +177,8 @@ function kartica(it, uSekciji) {
   if (it.ref) {
     const prije = document.createElement('p');
     prije.className = 'was';
-    // precrtano samo kad je to stvarno redovna cijena; najniža cijena u 30 dana
-    // je zakonska referenca, ne cijena od jučer, pa se ne precrtava
+    // precrtano samo kad je to stvarno redovna cijena; najniža cijena u 30 dana i sidrena
+    // cijena su zakonske reference, ne cijena od jučer, pa se ne precrtavaju
     prije.append(`${it.refLabel}: `);
     const iznos = document.createElement(it.refLabel === 'redovna cijena' ? 's' : 'b');
     iznos.textContent = eur(it.ref);
