@@ -1,3 +1,11 @@
+---
+verified:
+  - by: claude/opus-5.5
+    at: 2026-10-06T10:54:07+02:00
+    how: python scripts/fetch.py (adrese iz imena CSV-ova i stranica cjenika svih lanaca); curl na obje stranice aplikacije; tekst odluke na narodne-novine.nn.hr (NN 75/2025); NN 101/2026 i odgoda u NN 110/2026 po TEB-u i RRiF-u
+stale_after: 2027-01-06T00:00:00+01:00
+---
+
 # Cijene - Velika Gorica
 
 Koja od pet trgovina u Velikoj Gorici ima ono što tražim - iz njihovih dnevnih cjenika.
@@ -20,7 +28,8 @@ Koja od pet trgovina u Velikoj Gorici ima ono što tražim - iz njihovih dnevnih
 ## Kako radi
 
 Trgovci su dužni svaki dan do 8:00 objaviti cjenik svake prodavaonice u CSV/XML formatu
-(Odluka Vlade o objavi cjenika, NN 75/2025). GitHub Actions svako jutro pokreće
+(Odluka Vlade o objavi cjenika, NN 75/2025; od 17.11.2026. zamjenjuju je odluke iz
+NN 101/2026). GitHub Actions svako jutro pokreće
 `scripts/fetch.py`, koji preuzme cjenike, složi ih u `site/data.json` i objavi statičnu
 stranicu na GitHub Pages. Nema servera, baze ni API ključeva.
 
