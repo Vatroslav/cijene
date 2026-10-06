@@ -14,6 +14,7 @@ import datetime as dt
 import html
 import io
 import json
+import os
 import re
 import sys
 import time
@@ -45,8 +46,11 @@ STORES_SALE = [
      "address": "Nikole Tesle 12B", "ktc_branch": "RC SISAK PJ-41"},
     {"id": "ktc-si-zagrebacka", "chain": "ktc", "name": "KTC Sisak", "city": "Sisak",
      "address": "Zagrebačka 49", "ktc_branch": "RC SISAK II PJ-73"},
+    # Otkad je dodana (20.9.2026.) objavljuje samo zaglavlje bez artikala, pa ne prolazi. Ostaje da
+    # se sama pojavi kad KTC to popravi, ali ne diže uzbunu (vidi alarm()).
     {"id": "ktc-vg", "chain": "ktc", "name": "KTC Velika Gorica", "city": "Velika Gorica",
-     "address": "Trg kralja Petra Krešimira IV 1", "ktc_branch": "RC VELIKA GORICA PJ-8B"},
+     "address": "Trg kralja Petra Krešimira IV 1", "ktc_branch": "RC VELIKA GORICA PJ-8B",
+     "alarm": False},
     {"id": "eurospin-si", "chain": "eurospin", "name": "Eurospin Sisak", "city": "Sisak",
      "address": "Zagrebačka 49G", "eurospin_code": "310012"},
     {"id": "eurospin-vg", "chain": "eurospin", "name": "Eurospin Velika Gorica",
@@ -113,14 +117,16 @@ COLUMNS = {
         "barcode": "barkod", "category": "kategorija_proizvoda",
     },
     "plodine": {
-        # zaglavlje je bez dijakritike, a jedinica_mjere je vrsta pakiranja ("KOM"),
-        # pa jedinica za cijenu po JM ide iz neto količine ("1 L")
+        # Od 1.10.2026. nema neto količine, kategorije, najniže cijene u 30 dana ni stupca
+        # akcijske cijene. Akcija je oznaka "DA", a MPC je tad akcijska cijena; za usporedbu
+        # je tu sidrena cijena (cijena na dan 2.5.2025.). Pakiranje je u imenu
+        # ("VODA JAMNICA 1 L BOCA"), jedinica mjere je KOM ili KG. Cjenik nabraja i artikle
+        # koje prodavaonica nema (oko pola), oni se preskaču.
         "name": "naziv proizvoda", "code": "sifra proizvoda", "brand": "marka proizvoda",
-        "qty": "neto kolicina", "unit": None, "price": "maloprodajna cijena",
-        "unit_price": "cijena po jm",
-        "special": "mpc za vrijeme posebnog oblika prodaje",
-        "low30": "najniza cijena u poslj. 30 dana",
-        "barcode": "barkod", "category": "kategorija proizvoda",
+        "qty": None, "unit": "jedinica mjere", "price": "mpc", "unit_price": "cijena po jm",
+        "special": None, "low30": None, "barcode": "barkod", "category": None,
+        "sale_flag": "poseban oblik prodaje", "anchor": "sidrena cijena",
+        "available": "dostupno nedostupno",
     },
 }
 
@@ -162,7 +168,8 @@ _DOWNLOADS = {}
 
 
 def get_cached(url: str) -> bytes:
-    """Isti ZIP dijeli više prodavaonica (Lidl, Eurospin, Plodine) - skida se jednom po pokretanju."""
+    """Isti ZIP ili popis dijeli više prodavaonica (Eurospin, Plodine, Lidl), a Lidl u Velikoj
+    Gorici je na obje stranice - skida se jednom po pokretanju."""
     if url not in _DOWNLOADS:
         _DOWNLOADS[url] = get(url)
     return _DOWNLOADS[url]
@@ -204,7 +211,8 @@ def konzum_url(store, d):
             href = html.unescape(href)
             parts = urllib.parse.unquote_plus(href.split("title=", 1)[1]).split(",")
             if len(parts) > 2 and parts[2].strip() == store["konzum_code"]:
-                # Konzum vraća 404 kad su razmaci kodirani kao "+" - mora biti %20
+                # razmaci kao %20; 18.9. je "+" izgledao kao uzrok 404, ali 6.10. oba oblika
+                # rade jednako - 404 je nasumičan, zato retry_404 u fetch_konzum
                 return KONZUM + href.replace("+", "%20")
     return None
 
@@ -234,21 +242,8 @@ def fetch_zabac(store):
     raise NotAvailable("Žabac: nema dostupnog cjenika")
 
 
-LIDL = "https://tvrtka.lidl.hr"
-LIDL_INDEX = [f"{LIDL}/cijene/cijene-u-trgovinama", f"{LIDL}/cijene"]
-
-
-def lidl_zip_date(href):
-    """Datum iz imena ZIP-a. Lidl ih imenuje ručno ("..._na_dan_18_09_2026", "Cijene_14.07."),
-    pa se gleda samo ime datoteke, a godina može nedostajati."""
-    name = urllib.parse.unquote(href).rsplit("/", 1)[-1].removesuffix(".zip")
-    for m in re.finditer(r"(\d{1,2})[._\s-]+(\d{1,2})(?:[._\s-]+(\d{4}))?", name):
-        day, month, year = int(m[1]), int(m[2]), int(m[3] or dt.date.today().year)
-        try:
-            return dt.date(year, month, day)
-        except ValueError:
-            continue
-    return None
+LIDL = "https://www.lidl.hr"
+LIDL_INDEX = f"{LIDL}/c/cijene/s10073252"
 
 
 def csv_from_zip(raw: bytes, match):
@@ -267,29 +262,26 @@ def csv_from_zip(raw: bytes, match):
 
 
 def fetch_lidl(store):
-    links = {}
-    for index in LIDL_INDEX:
-        try:
-            page_html = get(index).decode("utf-8", "replace")
-        except NotAvailable:
-            continue
-        for href in re.findall(r'href="([^"]+\.zip)"', page_html):
-            d = lidl_zip_date(href)
-            if d:
-                links[urllib.parse.urljoin(LIDL, html.unescape(href))] = d
-    oldest = dt.date.today() - dt.timedelta(days=DAYS_BACK)
-    for url, d in sorted(links.items(), key=lambda kv: kv[1], reverse=True):
-        if d < oldest:
-            break
-        prefix = f"Supermarket {store['lidl_code']}_"
-        try:
-            found = csv_from_zip(get_cached(url), lambda n: n.startswith(prefix))
-        except (NotAvailable, zipfile.BadZipFile):
-            continue
-        if found:
-            # pravi datum je u imenu CSV-a ("..._18.09.2026_7.15h.csv"), ime ZIP-a je samo naznaka
-            m = re.search(r"_(\d{1,2})\.(\d{1,2})\.(\d{4})_", found[1])
-            return found[0], dt.date(int(m[3]), int(m[2]), int(m[1])) if m else d, url
+    """Jedna stranica nabraja CSV svake prodavaonice za zadnjih tridesetak dana, datum je u
+    imenu ("Supermarket 240_..._06.10.2026_7.15h.csv"). Do 22.9.2026. bio je jedan dnevni ZIP
+    na tvrtka.lidl.hr."""
+    page_html = get_cached(LIDL_INDEX).decode("utf-8", "replace")
+    prefix = f"Supermarket {store['lidl_code']}_"
+    files = {}
+    for href in re.findall(r'href="(/[^"]+\.csv)"', page_html):
+        href = html.unescape(href)
+        name = urllib.parse.unquote(href).rsplit("/", 1)[-1]
+        m = re.search(r"_(\d{2})\.(\d{2})\.(\d{4})_", name)
+        if name.startswith(prefix) and m:
+            files.setdefault(dt.date(int(m[3]), int(m[2]), int(m[1])), []).append(href)
+    for d in days():
+        for href in sorted(files.get(d, []), reverse=True):
+            # imena imaju razmake i dijakritiku; quote ne dira već kodirane znakove ("%")
+            url = LIDL + urllib.parse.quote(href, safe="/%")
+            try:
+                return get_cached(url), d, url
+            except NotAvailable:
+                continue
     raise NotAvailable("Lidl: nema cjenika za zadnjih %d dana" % DAYS_BACK)
 
 
@@ -412,6 +404,8 @@ def unit_label(qty: str, unit: str, chain: str) -> str:
     elif chain == "konzum":
         parts = (qty or "").split()
         u = parts[-1] if len(parts) > 1 else ""
+    elif chain == "plodine" and (unit or "").strip().lower() == "kg":
+        u = "kg"   # roba na vagu
     elif chain in ("lidl", "plodine"):
         # cijena po jedinici je po kg ili L, ovisno o pakiranju ("800g", "1,5l", "1 L")
         m = re.search(r"\d\s*(kg|g|ml|l)\b", (qty or "").lower())
@@ -442,7 +436,7 @@ def parse(raw: bytes, chain: str):
 
     items, seen = [], {}
     for row in reader:
-        if not row or not val(row, "name"):
+        if not row or not val(row, "name") or val(row, "available").upper() == "NEDOSTUPNO":
             continue
         # Lidl i Eurospin ponavljaju isti artikl (istu šifru) u više redaka, po jedan za
         # svaki barkod. Ostaje jedan redak, s EAN-13 barkodom ako ga ima (on se poklapa
@@ -454,17 +448,22 @@ def parse(raw: bytes, chain: str):
             continue
         seen[code] = len(items)
         qty_raw, unit = val(row, "qty"), val(row, "unit")
+        # Eurospin upisuje 0 kad proizvod nije na akciji
+        price, special = num(val(row, "price")), num(val(row, "special")) or None
+        if val(row, "sale_flag").upper() == "DA":
+            price, special = None, price   # Plodine: MPC je akcijska cijena
         items.append({
             "code": code,
             "name": re.sub(r"\s+", " ", val(row, "name")),
             "brand": val(row, "brand"),
             "qty": clean_qty(qty_raw, unit),
-            "price": num(val(row, "price")),
+            "price": price,
             "unit_price": num(val(row, "unit_price")),
-            "unit": unit_label(qty_raw, unit, chain),
-            # Eurospin upisuje 0 kad proizvod nije na akciji
-            "special": num(val(row, "special")) or None,
+            # bez stupca neto količine (Plodine) pakiranje se čita iz imena
+            "unit": unit_label(qty_raw if cols["qty"] else val(row, "name"), unit, chain),
+            "special": special,
             "low30": num(val(row, "low30")),
+            "anchor": num(val(row, "anchor")),
             "barcode": val(row, "barcode").lstrip("0") or "",
             "category": val(row, "category").strip().capitalize(),
         })
@@ -478,7 +477,9 @@ FIELDS = ["store", "name", "brand", "qty", "price", "unit_price", "unit", "speci
 
 # code služi za spajanje iste akcije u više prodavaonica istog lanca (Eurospin i Lidl
 # imaju jednake cijene u Sisku i Velikoj Gorici, pa bi se inače sve prikazalo dvaput)
-SALE_FIELDS = ["store", "code", "name", "brand", "qty", "price", "special", "low30", "unit_price", "unit", "category"]
+# anchor = sidrena cijena (na dan 2.5.2025.), usporedna cijena kad nema najniže u 30 dana (Plodine)
+SALE_FIELDS = ["store", "code", "name", "brand", "qty", "price", "special", "low30", "anchor",
+               "unit_price", "unit", "category"]
 
 # Žabac je outlet: prodaje robu s kratkim rokom po sniženoj cijeni, pa u cjeniku
 # nema stupca s akcijskom cijenom - nema što označiti kad je cijeli asortiman sniženi.
@@ -518,6 +519,7 @@ def build_prices(out_dir: Path):
         print("::error::Nijedan cjenik nije preuzet")
         sys.exit(1)
     write(out_dir / "data.json", {"stores": stores, "fields": FIELDS, "items": rows}, rows)
+    return stores
 
 
 def build_sale(out_dir: Path):
@@ -537,14 +539,47 @@ def build_sale(out_dir: Path):
         stores.append(info)
     if not rows:
         print("::warning::Akcije: nijedan cjenik nije preuzet, stranica se ne mijenja")
-        return
+        return stores
     write(out_dir / "akcije" / "data.json", {"stores": stores, "fields": SALE_FIELDS, "items": rows}, rows)
+    return stores
+
+
+PAGES = "https://vatroslav.github.io/cijene"
+
+
+def failed_before() -> set:
+    """Id-jevi prodavaonica koje nisu prošle ni u zadnjem objavljenom pokretanju."""
+    ids = set()
+    for path in ("data.json", "akcije/data.json"):
+        try:
+            data = json.loads(get(f"{PAGES}/{path}"))
+        except (NotAvailable, ValueError):
+            continue
+        ids |= {s["id"] for s in data.get("stores", []) if s.get("error")}
+    return ids
+
+
+def alarm(stores):
+    """Prodavaonica koja ne prođe ni drugo pokretanje zaredom diže uzbunu: workflow pada nakon
+    objave (ostale trgovine se i dalje osvježe), a GitHub o padu javi mailom. Jedan promašaj
+    nije kvar - Žabac zna jednom ne odgovoriti. Bez ovoga Lidl i Plodine nisu prolazili dva
+    tjedna, a run je bio zelen."""
+    alarm_off = {s["id"] for s in STORES + STORES_SALE if s.get("alarm") is False}
+    failing = [s for s in stores if s.get("error") and s["id"] not in alarm_off]
+    if not failing:
+        return
+    before = failed_before()
+    repeated = [f"{s['name']}, {s['address']}" for s in failing if s["id"] in before]
+    for name in repeated:
+        print(f"::error::{name}: ne prolazi ni drugo pokretanje zaredom")
+    if repeated and os.environ.get("GITHUB_OUTPUT"):
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+            f.write(f"uzbuna={'; '.join(repeated)}\n")
 
 
 def main():
     out_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "site")
-    build_prices(out_dir)
-    build_sale(out_dir)
+    alarm(build_prices(out_dir) + build_sale(out_dir))
 
 
 if __name__ == "__main__":

@@ -22,12 +22,15 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      uzbuna: ${{ steps.cjenici.outputs.uzbuna }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Preuzmi cjenike
+        id: cjenici
         run: python scripts/fetch.py site
       # Pages dopušta pregledniku da CSS/JS drži 10 minuta; verzija u linku tjera novi dohvat
       # nakon deploya, inače novi HTML dođe sa starim stilom.
@@ -60,3 +63,17 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Trgovina koja ne prođe ni drugo pokretanje zaredom (fetch.py, alarm) ruši run tek nakon
+  # objave: ostale trgovine se osvježe, a crveni run i GitHubov mail javljaju da izvor treba popraviti.
+  provjera:
+    needs: [build, deploy]
+    if: needs.build.outputs.uzbuna != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trgovine koje ne prolaze
+        env:
+          UZBUNA: ${{ needs.build.outputs.uzbuna }}
+        run: |
+          echo "::error::Ne prolazi ni drugo pokretanje zaredom: $UZBUNA"
+          exit 1
