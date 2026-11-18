@@ -1,9 +1,9 @@
 ---
 verified:
   - by: claude/opus-5.5
-    at: 2026-10-06T11:11:28+02:00
-    how: python scripts/fetch.py nakon popravka Lidla i Plodina (5/5 glavna, 8/9 akcije - KTC VG bez artikala); Lidl stranica s10073252 (3221 CSV link, 30 dana za VG, CSV od 21.9. bez NAZIV); Plodine ZIP 30.9. i 6.10. za prodavaonicu 140 (zaglavlja, oznaka akcije, dostupnost, sidrena prema redovnoj cijeni); KTC PJ-8B popis datoteka; logovi zakazanih runova od 18.9.
-stale_after: 2026-11-24T00:00:00+01:00
+    at: 2026-11-18T17:23:25+01:00
+    how: python scripts/fetch.py nakon popravka Konzuma i Lidla (5/5 glavna, 9/9 akcije); Konzum CSV 0208 od 18.11. (zaglavlje, DA/NE na 34153 retka, bazna cijena); Lidl CSV 240 od 17.11. (zaglavlje, jedinica_mjere vrijednosti, 18639 redaka / 5614 šifri, akcija s praznim MPC-om); KTC PJ-8B 1113 artikala; logovi runova 16.-18.11.
+stale_after: 2026-12-02T00:00:00+01:00
 ---
 
 # Zamke izvora cjenika
@@ -11,15 +11,20 @@ stale_after: 2026-11-24T00:00:00+01:00
 Kako lanci objavljuju dnevne cjenike i gdje to odstupa od očekivanog. Pročitati prije izmjene
 `scripts/fetch.py` ili kad neka trgovina ne prolazi.
 
-Rok provjere je kratak namjerno: 17.11.2026. na snagu stupaju nove odluke o objavi cjenika
-(NN 101/2026, odgođeno s 1.10. u NN 110/2026), pa lanci mogu ponovno mijenjati format.
+17.11.2026. stupile su na snagu nove odluke o objavi cjenika (NN 101/2026, odgođeno s 1.10. u
+NN 110/2026). Konzum i Lidl su istog dana promijenili zaglavlja; rok provjere je kratak jer lanci
+mogu još dorađivati format.
 
 ## Glavna stranica (pet trgovina u Velikoj Gorici)
 
 - **Konzum:** u linku za preuzimanje razmaci smiju biti `+` ili `%20` - 6.10. oba oblika
   rade jednako (zapis od 18.9. da `+` vraća 404 bio je vjerojatno nasumični 404). Isti link
   nasumično vraća 404 i kad datoteka postoji (6.10.: 23 od 62 pokušaja), zato `retry_404`.
-  Zaglavlje ima tipfeler "posljednih" umjesto "posljednjih".
+  **Od 17.11.2026. novo zaglavlje**, isti model kao Plodine od 1.10.: nema stupca akcijske
+  cijene, najniže cijene u 30 dana ni kategorije. Akcija je `poseban oblik prodaje` = `DA` (uz
+  `naziv posebnog oblika prodaje` = "Akcijska prodaja"; 18.11. 4272 od 34153 artikala), a
+  `maloprodajna cijena` je tad akcijska cijena. Novi stupac `bazna cijena` jednak je MPC-u u
+  22588 redaka - što točno znači nije provjereno, a glavna stranica ga ne koristi.
 - **Spar:** Cloudflare vraća 403 zadanom Python User-Agentu; s User-Agentom iz `fetch.py`
   stranica s cjenicima 6.10. radi. Skripta ionako koristi JSON indeks
   `datoteke_cjenici/Cjenik{YYYYMMDD}.json`. CSV je u cp1250 i odvojen s `;`, a MPC je prazan kad
@@ -34,7 +39,15 @@ Rok provjere je kratak namjerno: 17.11.2026. na snagu stupaju nove odluke o obja
   `Supermarket 114_`), datum je u imenu CSV-a, CSV je u cp1250 i odvojen zarezom, a isti artikl
   je u više redaka (po barkodu) - ostaje jedan po šifri. CSV od 21.9. objavljen je bez stupca
   `NAZIV` i bez stupaca akcije - Lidlova greška, jednodnevna.
-- Kategorije se razlikuju po lancu: Spar, Konzum i Lidl imaju po 6 grubih, Žabac 22 uže.
+  **Od 17.11.2026. novo zaglavlje:** nema kategorije; `cijena_za_jedinicin_mjere` (Lidlov
+  tipfeler) i `najniza_cijena_u_poslj_30_dana` (bez točke). `jedinica_mjere` više nije pakiranje
+  ("800g") nego oznaka "g (1kg)", "ml (1 L)", "bez (1 kom.)", "g (100 g)" - u zagradi je jedinica
+  cijene po jedinici mjere. `neto_kolicina` je u kg ili L, i kod komadnih artikala ("bez", "kom",
+  "komad", oko 60 % redaka) je to težina, ne broj komada - tamo pakiranje ostaje prazno.
+  `sidrena_cijena` je tekst ("MPC na 2.5.2025: 1,99€"), ne broj. Akcija i dalje ostavlja MPC
+  prazan. 17.11. VG ima 5614 šifri (16.11. 7013) - manje artikala u cjeniku, ne greška parsera.
+- Kategorije se razlikuju po lancu: Spar ima 6 grubih, Žabac 22 uže. Konzum i Lidl ih od
+  17.11.2026. ne objavljuju (do tada po 6 grubih).
 
 ## Stranica s akcijama (Sisak i Velika Gorica)
 
@@ -44,7 +57,8 @@ Rok provjere je kratak namjerno: 17.11.2026. na snagu stupaju nove odluke o obja
 - **KTC:** stranica po poslovnici (`/cjenici?poslovnica=RC SISAK PJ-41`), datum je u imenu CSV-a,
   za isti dan zna biti više objava. Poslovnica u Velikoj Gorici (PJ-8B) objavljuje samo datoteke
   sa samim zaglavljem (zadnja 2.10.), a druga (PJ-83) nijednu - zato se preskaču datoteke bez
-  redaka, a KTC Velika Gorica u `fetch.py` ne diže uzbunu kad ne prođe (`"alarm": False`). Kad nema
+  redaka, a KTC Velika Gorica u `fetch.py` ne diže uzbunu kad ne prođe (`"alarm": False`).
+  18.11. PJ-8B prvi put ima artikle (1113); jedan dan još nije razlog za vraćanje uzbune. Kad nema
   akcije, KTC u stupac akcijske cijene upiše `0.00`; od 29.9. sisačke poslovnice nemaju nijednu akciju.
 - **Eurospin:** jedan dnevni ZIP, ime je predvidivo (`cjenik_06.10.2026-7.30.zip`). Cijene i
   asortiman su istovjetni u svim prodavaonicama, pa se ista akcija spaja u jedan redak.

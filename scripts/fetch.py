@@ -77,22 +77,23 @@ COLUMNS = {
         "barcode": "barkod", "category": "kategorija proizvoda",
     },
     "konzum": {
+        # Od 17.11.2026. (NN 101/2026) nema stupca akcijske cijene, najniže cijene u 30 dana
+        # ni kategorije. Akcija je oznaka "DA", a MPC je tad akcijska cijena - kao Plodine.
         "name": "naziv proizvoda", "code": "šifra proizvoda", "brand": "marka proizvoda",
         "qty": "neto količina", "unit": "jedinica mjere", "price": "maloprodajna cijena",
-        "unit_price": "cijena za jedinicu mjere",
-        "special": "mpc za vrijeme posebnog oblika prodaje",
-        # Konzumovo zaglavlje ima tipfeler "posljednih" - prihvaćaju se oba oblika
-        "low30": ("najniža cijena u posljednjih 30 dana", "najniža cijena u posljednih 30 dana"),
-        "barcode": "barkod", "category": "kategorija proizvoda",
+        "unit_price": "cijena za jedinicu mjere", "special": None, "low30": None,
+        "barcode": "barkod", "category": None, "sale_flag": "poseban oblik prodaje",
     },
     "lidl": {
-        # neto_količina je samo broj; jedinica_mjere je opis pakiranja ("1,5l", "800g")
-        "name": "naziv", "code": "šifra", "brand": "marka", "qty": "jedinica_mjere",
-        "unit": None, "price": "maloprodajna_cijena",
-        "unit_price": "cijena_za_jedinicu_mjere",
+        # Od 17.11.2026. neto_kolicina je količina u kg ili L, a jedinica_mjere oznaka poput
+        # "g (1kg)" ili "bez (1 kom.)" (vidi lidl_units); kategorije više nema.
+        # "cijena_za_jedinicin_mjere" je Lidlov tipfeler - prihvaćaju se oba oblika.
+        "name": "naziv", "code": "šifra", "brand": "marka", "qty": "neto_kolicina",
+        "unit": "jedinica_mjere", "price": "maloprodajna_cijena",
+        "unit_price": ("cijena_za_jedinicu_mjere", "cijena_za_jedinicin_mjere"),
         "special": "mpc_za_vrijeme_posebnog_oblika_prodaje",
-        "low30": "najniza_cijena_u_poslj._30_dana",
-        "barcode": "barkod", "category": "kategorija_proizvoda",
+        "low30": ("najniza_cijena_u_poslj_30_dana", "najniza_cijena_u_poslj._30_dana"),
+        "barcode": "barkod", "category": None,
     },
     "zabac": {
         "name": "naziv artikla", "code": "šifra artikla", "brand": "marka", "qty": "gramaža",
@@ -406,13 +407,29 @@ def unit_label(qty: str, unit: str, chain: str) -> str:
         u = parts[-1] if len(parts) > 1 else ""
     elif chain == "plodine" and (unit or "").strip().lower() == "kg":
         u = "kg"   # roba na vagu
-    elif chain in ("lidl", "plodine"):
-        # cijena po jedinici je po kg ili L, ovisno o pakiranju ("800g", "1,5l", "1 L")
+    elif chain == "plodine":
+        # cijena po jedinici je po kg ili L, ovisno o pakiranju u imenu ("1 L", "800 G")
         m = re.search(r"\d\s*(kg|g|ml|l)\b", (qty or "").lower())
         u = {"kg": "kg", "g": "kg", "ml": "L", "l": "L"}[m[1]] if m else ""
     else:
         u = ""
     return UNITS.get(u.lower(), u)
+
+
+def lidl_units(qty: str, unit: str):
+    """Lidl od 17.11.2026.: neto_kolicina '0.08' + jedinica_mjere 'g (1kg)' -> ('0,08 kg', 'kg').
+    U zagradi je jedinica na koju se odnosi cijena za jedinicu mjere ('1 L', '1 kom.', '100 g').
+    Kod komadnih artikala ('bez (1 kom.)', 'kom (1 kom)') neto_kolicina je težina, ne broj
+    komada, pa pakiranje ostaje prazno."""
+    m = re.fullmatch(r"(.*?)\s*\(\s*([\d.,]*)\s*([^)]*?)\.?\s*\)", (unit or "").strip())
+    if not m:
+        return "", ""
+    natural, n, base = m[1].strip().lower(), m[2], m[3].strip().lower()
+    base = UNITS.get(base, "")   # 'pranje' i slično se ne prikazuje
+    label = base if not base or n in ("", "1") else f"{n} {base}"
+    qty_unit = {"g": "kg", "kg": "kg", "ml": "L", "l": "L"}.get(natural)
+    amount = num(qty)
+    return (f"{fmt_num(amount)} {qty_unit}" if qty_unit and amount else ""), label
 
 
 def parse(raw: bytes, chain: str):
@@ -448,19 +465,24 @@ def parse(raw: bytes, chain: str):
             continue
         seen[code] = len(items)
         qty_raw, unit = val(row, "qty"), val(row, "unit")
+        if chain == "lidl":
+            qty, unit_lbl = lidl_units(qty_raw, unit)
+        else:
+            qty = clean_qty(qty_raw, unit)
+            # bez stupca neto količine (Plodine) pakiranje se čita iz imena
+            unit_lbl = unit_label(qty_raw if cols["qty"] else val(row, "name"), unit, chain)
         # Eurospin upisuje 0 kad proizvod nije na akciji
         price, special = num(val(row, "price")), num(val(row, "special")) or None
         if val(row, "sale_flag").upper() == "DA":
-            price, special = None, price   # Plodine: MPC je akcijska cijena
+            price, special = None, price   # Plodine i Konzum: MPC je akcijska cijena
         items.append({
             "code": code,
             "name": re.sub(r"\s+", " ", val(row, "name")),
             "brand": val(row, "brand"),
-            "qty": clean_qty(qty_raw, unit),
+            "qty": qty,
             "price": price,
             "unit_price": num(val(row, "unit_price")),
-            # bez stupca neto količine (Plodine) pakiranje se čita iz imena
-            "unit": unit_label(qty_raw if cols["qty"] else val(row, "name"), unit, chain),
+            "unit": unit_lbl,
             "special": special,
             "low30": num(val(row, "low30")),
             "anchor": num(val(row, "anchor")),
