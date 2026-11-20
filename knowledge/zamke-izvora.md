@@ -1,8 +1,8 @@
 ---
 verified:
   - by: claude/opus-5.5
-    at: 2026-11-18T17:23:25+01:00
-    how: python scripts/fetch.py nakon popravka Konzuma i Lidla (5/5 glavna, 9/9 akcije); Konzum CSV 0208 od 18.11. (zaglavlje, DA/NE na 34153 retka, bazna cijena); Lidl CSV 240 od 17.11. (zaglavlje, jedinica_mjere vrijednosti, 18639 redaka / 5614 šifri, akcija s praznim MPC-om); KTC PJ-8B 1113 artikala; logovi runova 16.-18.11.
+    at: 2026-11-20T21:10:00+01:00
+    how: python scripts/fetch.py nakon popravka Lidla (5/5 glavna, 9/9 akcije); Lidl CSV 240 od 20.11. (zaglavlje s nastavkom _robe, separator ;, 18965 redaka / 5631 šifri, barkod_robe = ean_barkod_robe u svim recima, 1811 redaka akcije s praznim MPC-om); run 44799783477 (provjera pala na tri Lidla). Ostali lanci po provjeri od 18.11.
 stale_after: 2026-12-02T00:00:00+01:00
 ---
 
@@ -46,6 +46,12 @@ mogu još dorađivati format.
   "komad", oko 60 % redaka) je to težina, ne broj komada - tamo pakiranje ostaje prazno.
   `sidrena_cijena` je tekst ("MPC na 2.5.2025: 1,99€"), ne broj. Akcija i dalje ostavlja MPC
   prazan. 17.11. VG ima 5614 šifri (16.11. 7013) - manje artikala u cjeniku, ne greška parsera.
+  **Od 20.11.2026. opet novo zaglavlje:** stupci imaju nastavak `_robe` (`naziv_robe`,
+  `sifra_robe` bez dijakritike, `marka_robe`, `maloprodajna_cijena_robe`,
+  `cijena_za_jedinicin_mjere_robe`, `barkod_robe`), novi su `ean_barkod_robe` (isti kao
+  `barkod_robe` u svim recima 20.11.) i `bazna_cijena_robe` (tekst "MPC na 2.5.2025: 1,99€",
+  bivša `sidrena_cijena`). CSV je sad odvojen točka-zarezom, decimale su sa zarezom. Parser
+  prihvaća stare i nove nazive.
 - Kategorije se razlikuju po lancu: Spar ima 6 grubih, Žabac 22 uže. Konzum i Lidl ih od
   17.11.2026. ne objavljuju (do tada po 6 grubih).
 

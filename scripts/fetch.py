@@ -88,12 +88,17 @@ COLUMNS = {
         # Od 17.11.2026. neto_kolicina je količina u kg ili L, a jedinica_mjere oznaka poput
         # "g (1kg)" ili "bez (1 kom.)" (vidi lidl_units); kategorije više nema.
         # "cijena_za_jedinicin_mjere" je Lidlov tipfeler - prihvaćaju se oba oblika.
-        "name": "naziv", "code": "šifra", "brand": "marka", "qty": "neto_kolicina",
-        "unit": "jedinica_mjere", "price": "maloprodajna_cijena",
-        "unit_price": ("cijena_za_jedinicu_mjere", "cijena_za_jedinicin_mjere"),
+        # Od 20.11.2026. stupci imaju nastavak "_robe" ("naziv_robe", "sifra_robe" bez
+        # dijakritike), a CSV je odvojen točka-zarezom s decimalnim zarezom. Stari nazivi
+        # ostaju prihvaćeni jer Lidl zna vratiti prethodni format.
+        "name": ("naziv_robe", "naziv"), "code": ("sifra_robe", "šifra"),
+        "brand": ("marka_robe", "marka"), "qty": "neto_kolicina",
+        "unit": "jedinica_mjere", "price": ("maloprodajna_cijena_robe", "maloprodajna_cijena"),
+        "unit_price": ("cijena_za_jedinicin_mjere_robe", "cijena_za_jedinicu_mjere_robe",
+                       "cijena_za_jedinicu_mjere", "cijena_za_jedinicin_mjere"),
         "special": "mpc_za_vrijeme_posebnog_oblika_prodaje",
         "low30": ("najniza_cijena_u_poslj_30_dana", "najniza_cijena_u_poslj._30_dana"),
-        "barcode": "barkod", "category": None,
+        "barcode": ("barkod_robe", "barkod"), "category": None,
     },
     "zabac": {
         "name": "naziv artikla", "code": "šifra artikla", "brand": "marka", "qty": "gramaža",
