@@ -1,8 +1,8 @@
 ---
 verified:
   - by: claude/opus-5.5
-    at: 2026-11-20T21:10:00+01:00
-    how: python scripts/fetch.py nakon popravka Lidla (5/5 glavna, 9/9 akcije); Lidl CSV 240 od 20.11. (zaglavlje s nastavkom _robe, separator ;, 18965 redaka / 5631 šifri, barkod_robe = ean_barkod_robe u svim recima, 1811 redaka akcije s praznim MPC-om); run 44799783477 (provjera pala na tri Lidla). Ostali lanci po provjeri od 18.11.
+    at: 2026-11-25T19:12:00+01:00
+    how: python scripts/fetch.py nakon popravka Spara i Plodina (5/5 glavna, 9/9 akcije); Spar CSV 87076 i Interspar 8728 od 25.11. (stupac akcije DA/NE, 2258 i 5511 DA, svi s popunjenim MPC-om); Plodine ZIP 25.11. prodavaonica 140 (bazna cijena = sidrena cijena iz ZIP-a 22.11. na svih 38780 zajedničkih šifri; ZIP 23.11. još sa sidrenom); run 45665214312 (provjera pala na Plodine). Konzum, Lidl, Žabac, KTC i Eurospin prolaze 25.11.
 stale_after: 2026-12-02T00:00:00+01:00
 ---
 
@@ -27,8 +27,14 @@ mogu još dorađivati format.
   22588 redaka - što točno znači nije provjereno, a glavna stranica ga ne koristi.
 - **Spar:** Cloudflare vraća 403 zadanom Python User-Agentu; s User-Agentom iz `fetch.py`
   stranica s cjenicima 6.10. radi. Skripta ionako koristi JSON indeks
-  `datoteke_cjenici/Cjenik{YYYYMMDD}.json`. CSV je u cp1250 i odvojen s `;`, a MPC je prazan kad
-  je proizvod na akciji.
+  `datoteke_cjenici/Cjenik{YYYYMMDD}.json`. CSV je u cp1250 i odvojen s `;`. Do 24.11. MPC je
+  bio prazan kad je proizvod na akciji, a akcijska cijena u svom stupcu.
+  **Od 25.11.2026. novo zaglavlje**, isti model kao Konzum i Plodine: stupac `mpc za vrijeme
+  posebnog oblika prodaje (eur)` nosi oznaku `DA`/`NE`, a `mpc (eur)` je tad akcijska cijena
+  (25.11. Spar 2258, Interspar 5511 artikala s `DA`, svi s popunjenim MPC-om). Nema najniže
+  cijene u 30 dana ni kategorije; novi stupac je `sidrena cijena (eur)` (broj, ne tekst kao kod
+  Lidla), glavna stranica ga ne koristi. Parser čita stupac akcije i kao cijenu i kao oznaku,
+  pa radi i ako Spar vrati stari format.
 - **Žabac:** HTML stranica `?store=Velika%20Gorica`, datoteke imaju nasumična imena, a datum je
   u naslovu. Nema cijene za jedinicu mjere ni akcijske cijene.
 - **Lidl:** od 23.9.2026. cjenici više nisu ZIP na tvrtka.lidl.hr (`/cijene/cijene-u-trgovinama`
@@ -52,8 +58,8 @@ mogu još dorađivati format.
   `barkod_robe` u svim recima 20.11.) i `bazna_cijena_robe` (tekst "MPC na 2.5.2025: 1,99€",
   bivša `sidrena_cijena`). CSV je sad odvojen točka-zarezom, decimale su sa zarezom. Parser
   prihvaća stare i nove nazive.
-- Kategorije se razlikuju po lancu: Spar ima 6 grubih, Žabac 22 uže. Konzum i Lidl ih od
-  17.11.2026. ne objavljuju (do tada po 6 grubih).
+- Kategorije ima još samo Žabac (22 uže). Konzum i Lidl ih ne objavljuju od 17.11.2026., a
+  Spar od 25.11. (do tada svi po 6 grubih).
 
 ## Stranica s akcijama (Sisak i Velika Gorica)
 
@@ -80,5 +86,9 @@ mogu još dorađivati format.
   ("VODA JAMNICA 1 L BOCA"), `jedinica mjere` je KOM ili KG (roba na vagu). CSV sad nabraja i
   artikle kojih u prodavaonici nema (`dostupno nedostupno` = `NEDOSTUPNO`, 6.10. 20157 od 37994
   redaka) - oni se preskaču. ZIP je narastao s ~64 MB na ~180 MB.
+  **Od 24.11.2026.** `sidrena cijena` se zove `bazna cijena` - iste vrijednosti (25.11. jednaka
+  sidrenoj iz ZIP-a od 22.11. na svih 38780 zajedničkih šifri; ZIP od 23.11. još ima staro
+  ime). Parser prihvaća oba naziva. Cjenik od 25.11. ima i stupac `neto kolicina` ("1 L",
+  "0,500 L"); parser ga ne koristi, pakiranje i dalje čita iz imena.
 - **Žabac** nema stupac akcijske cijene jer je outlet - cijeli asortiman je sniženi. Zato na
   stranici ide sa svim artiklima i napomenom; sortiranje po popustu ga gura ispod pravih akcija.

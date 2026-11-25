@@ -69,12 +69,17 @@ STORES_SALE = [
 # None = lanac ne objavljuje taj podatak.
 COLUMNS = {
     "spar": {
+        # Od 25.11.2026. stupac akcijske cijene nosi oznaku DA/NE, a MPC je tad akcijska
+        # cijena - kao Konzum i Plodine. Nema najniže cijene u 30 dana ni kategorije, nova je
+        # "sidrena cijena (eur)" (glavna stranica je ne koristi). Isti stupac je i "special" i
+        # "sale_flag": stari format s cijenom u tom stupcu i dalje radi (num("DA") je None),
+        # novi se čita kao oznaka.
         "name": "naziv", "code": "šifra", "brand": "marka", "qty": "neto količina",
         "unit": "jedinica mjere", "price": "mpc (eur)",
         "unit_price": "cijena za jedinicu mjere (eur)",
         "special": "mpc za vrijeme posebnog oblika prodaje (eur)",
-        "low30": "najniža cijena u posljednjih 30 dana (eur)",
-        "barcode": "barkod", "category": "kategorija proizvoda",
+        "sale_flag": "mpc za vrijeme posebnog oblika prodaje (eur)",
+        "low30": None, "barcode": "barkod", "category": None,
     },
     "konzum": {
         # Od 17.11.2026. (NN 101/2026) nema stupca akcijske cijene, najniže cijene u 30 dana
@@ -128,10 +133,12 @@ COLUMNS = {
         # je tu sidrena cijena (cijena na dan 2.5.2025.). Pakiranje je u imenu
         # ("VODA JAMNICA 1 L BOCA"), jedinica mjere je KOM ili KG. Cjenik nabraja i artikle
         # koje prodavaonica nema (oko pola), oni se preskaču.
+        # Od 24.11.2026. sidrena cijena se zove "bazna cijena" (25.11. iste vrijednosti kao
+        # sidrena 22.11. na svim šiframa); prihvaćaju se oba naziva.
         "name": "naziv proizvoda", "code": "sifra proizvoda", "brand": "marka proizvoda",
         "qty": None, "unit": "jedinica mjere", "price": "mpc", "unit_price": "cijena po jm",
         "special": None, "low30": None, "barcode": "barkod", "category": None,
-        "sale_flag": "poseban oblik prodaje", "anchor": "sidrena cijena",
+        "sale_flag": "poseban oblik prodaje", "anchor": ("bazna cijena", "sidrena cijena"),
         "available": "dostupno nedostupno",
     },
 }
