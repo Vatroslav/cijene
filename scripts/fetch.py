@@ -206,6 +206,8 @@ def fetch_spar(store):
 
 
 KONZUM = "https://www.konzum.hr"
+# Link na cjenik: stari oblik preko konzum.hr ili (od 26.11.2026.) izravno na CloudFront
+KONZUM_LINK = re.compile(r'href="((?:/cjenici/download\?title=|https://[^"/]+\.cloudfront\.net/)[^"]+)"')
 
 
 def konzum_url(store, d):
@@ -216,17 +218,24 @@ def konzum_url(store, d):
             page_html = get(f"{KONZUM}/cjenici?date={d:%Y-%m-%d}&page={page}", retry_404=5).decode("utf-8", "replace")
         except NotAvailable:
             return None
-        hrefs = set(re.findall(r'href="(/cjenici/download\?title=[^"]+)"', page_html)) - seen
+        hrefs = set(KONZUM_LINK.findall(page_html)) - seen
         if not hrefs:
             return None
         seen |= hrefs
         for href in hrefs:
             href = html.unescape(href)
-            parts = urllib.parse.unquote_plus(href.split("title=", 1)[1]).split(",")
-            if len(parts) > 2 and parts[2].strip() == store["konzum_code"]:
+            if href.startswith("/"):
+                # do 25.11.2026.: /cjenici/download?title=<naziv datoteke>
+                title = href.split("title=", 1)[1]
                 # razmaci kao %20; 18.9. je "+" izgledao kao uzrok 404, ali 6.10. oba oblika
                 # rade jednako - 404 je nasumičan, zato retry_404 u fetch_konzum
-                return KONZUM + href.replace("+", "%20")
+                url = KONZUM + href.replace("+", "%20")
+            else:
+                # od 26.11.2026.: izravan link na CloudFront, naziv datoteke je kraj putanje
+                title, url = href.rsplit("/", 1)[1], href
+            parts = urllib.parse.unquote_plus(title).split(",")
+            if len(parts) > 2 and parts[2].strip() == store["konzum_code"]:
+                return url
     return None
 
 

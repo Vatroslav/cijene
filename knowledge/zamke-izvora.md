@@ -1,6 +1,9 @@
 ---
 verified:
   - by: claude/opus-5.5
+    at: 2026-11-26T21:35:00+01:00
+    how: konzum.hr/cjenici?date=2026-11-26 stranica 1 - linkovi izravno na d2depcln7eup0h.cloudfront.net, nijedan /cjenici/download; python scripts/fetch.py nakon popravka (5/5 glavna, 9/9 akcije); Konzum 0208 cjenik 26.11. 34248 artikala, svi s cijenom, 4305 na akciji; run 45890341154 (provjera pala na Konzum).
+  - by: claude/opus-5.5
     at: 2026-11-25T19:12:00+01:00
     how: python scripts/fetch.py nakon popravka Spara i Plodina (5/5 glavna, 9/9 akcije); Spar CSV 87076 i Interspar 8728 od 25.11. (stupac akcije DA/NE, 2258 i 5511 DA, svi s popunjenim MPC-om); Plodine ZIP 25.11. prodavaonica 140 (bazna cijena = sidrena cijena iz ZIP-a 22.11. na svih 38780 zajedničkih šifri; ZIP 23.11. još sa sidrenom); run 45665214312 (provjera pala na Plodine). Konzum, Lidl, Žabac, KTC i Eurospin prolaze 25.11.
 stale_after: 2026-12-02T00:00:00+01:00
@@ -20,6 +23,11 @@ mogu još dorađivati format.
 - **Konzum:** u linku za preuzimanje razmaci smiju biti `+` ili `%20` - 6.10. oba oblika
   rade jednako (zapis od 18.9. da `+` vraća 404 bio je vjerojatno nasumični 404). Isti link
   nasumično vraća 404 i kad datoteka postoji (6.10.: 23 od 62 pokušaja), zato `retry_404`.
+  **Od 26.11.2026. linkovi na `/cjenici?date=` vode izravno na CloudFront**
+  (`https://d2depcln7eup0h.cloudfront.net/20261126-SUPER,MARINA%20GETALDI%C4%86A%201%2010410%20VELIKA%20GORICA,0208,...CSV`),
+  a ne više na `/cjenici/download?title=`. Šifra prodavaonice je i dalje treće polje imena
+  datoteke odvojenog zarezom. Parser prihvaća oba oblika linka. Dva pokretanja 26.11. (17:10 i
+  20:20 UTC) prošla su bez Konzuma, a drugo je srušilo `provjera`.
   **Od 17.11.2026. novo zaglavlje**, isti model kao Plodine od 1.10.: nema stupca akcijske
   cijene, najniže cijene u 30 dana ni kategorije. Akcija je `poseban oblik prodaje` = `DA` (uz
   `naziv posebnog oblika prodaje` = "Akcijska prodaja"; 18.11. 4272 od 34153 artikala), a
